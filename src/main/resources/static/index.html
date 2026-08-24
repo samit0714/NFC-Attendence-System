@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFC Attendance | Samit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container glass-panel">
+        <header class="profile-header">
+            <div class="avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+            <div class="user-info">
+                <h1>Samit</h1>
+                <p>B.Tech CSE | Batch C1</p>
+            </div>
+            <div class="nfc-status pulse-active"><i class="fa-solid fa-nfc-symbol"></i></div>
+        </header>
+
+        <div class="stats-container">
+            <div class="stat-box glass-card">
+                <i class="fa-solid fa-chart-pie" style="color: #00f2fe;"></i>
+                <div>
+                    <span class="stat-value" id="current-percentage">--%</span>
+                    <span class="stat-label">Overall Attendance</span>
+                </div>
+            </div>
+            <div class="stat-box glass-card">
+                <i class="fa-solid fa-person-running" style="color: #ff416c;"></i>
+                <div>
+                    <span class="stat-value" id="classes-needed">--</span>
+                    <span class="stat-label">Needed for 75%</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn glass-btn full-width" onclick="openPredictor()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Exam Target Predictor
+        </button>
+
+        <div style="display: flex; gap: 8px; margin-top: 15px;">
+            <button class="btn glass-btn" onclick="openSubjectReport()" style="flex: 1;"><i class="fa-solid fa-chart-simple"></i> Subject Report</button>
+            <button class="btn glass-btn" onclick="openTimetable()" style="flex: 1;"><i class="fa-solid fa-calendar-week"></i> Timetable</button>
+            <button class="btn glass-btn" onclick="resetSystem()" style="flex: 0.5; color: #ff416c; border-color: rgba(255,65,108,0.3);" title="Reset App"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+
+        <div class="timeline-section" style="margin-top: 20px;">
+            <h2><i class="fa-solid fa-list-check"></i> Today's Action Plan</h2>
+            <div id="schedule-container" class="schedule-list">
+                <div class="loading-text">Fetching live data via NFC...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictor Modal -->
+    <div id="predictor-modal" class="modal-overlay hidden">
+        <div class="glass-panel modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-calendar-check"></i> Target Predictor</h3>
+                <button onclick="closeModal('predictor-modal')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <label>Start Date:</label>
+                <input type="date" id="start-date" class="glass-input">
+                <label>Exam Date:</label>
+                <input type="date" id="end-date" class="glass-input">
+                <button onclick="calculatePrediction()" class="btn btn-primary full-width" style="margin-top: 15px;">Set Target</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timetable Modal -->
+    <div id="timetable-modal" class="modal-overlay hidden">
+        <div class="glass-panel modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-table-list"></i> Weekly Timetable</h3>
+                <button onclick="closeModal('timetable-modal')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="full-timetable-container"></div>
+        </div>
+    </div>
+
+    <!-- NEW: Subject Report Modal -->
+    <div id="subject-report-modal" class="modal-overlay hidden">
+        <div class="glass-panel modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-chart-simple"></i> Subject Analytics</h3>
+                <button onclick="closeModal('subject-report-modal')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="subject-report-container">
+                <!-- Subject data JS se yahan aayega -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
