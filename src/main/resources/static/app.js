@@ -1,12 +1,12 @@
 const API_BASE = 'https://nfc-backend-samit.onrender.com/api';
-let weeklyTimetableCache = []; // Timetable save karne ke liye
+let weeklyTimetableCache = []; // To cache the timetable
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchStats();
     fetchSchedule();
     loadPersistentPredictor();
     
-    // Background mein poora timetable fetch kar rahe hain
+    // Fetching the complete timetable in the background
     fetch(`${API_BASE}/all-schedule`)
         .then(res => res.json())
         .then(data => { weeklyTimetableCache = data; });
@@ -106,13 +106,13 @@ function fetchSchedule() {
                     </div>
                     ${actionHTML}
                     
-                    <!-- 🌟 NAYA SMART ANALYTICS BUTTON (Timetable ke hisaab se) -->
+                    <!-- 🌟 NEW SMART ANALYTICS BUTTON (Based on Timetable) -->
                     <button class="analytics-toggle" onclick="toggleAdvancedAnalytics(${item.id}, '${item.subjectName}', ${item.attended}, ${item.held})">
                         Timetable Smart Analytics <i class="fa-solid fa-chevron-down" id="icon-${item.id}"></i>
                     </button>
                     
                     <div id="analytics-${item.id}" class="smart-analytics-box hidden">
-                        <!-- Data Yahan JS se aayega -->
+                        <!-- Data will be injected here via JS -->
                     </div>
                 `;
                 scheduleContainer.appendChild(card);
@@ -138,7 +138,7 @@ function toggleAdvancedAnalytics(id, subjectName, attended, held) {
             return;
         }
 
-        // Calculation shuru (Kal se leke Exam Date tak)
+        // Calculation begins (From tomorrow until Exam Date)
         let start = new Date();
         start.setDate(start.getDate() + 1); 
         start.setHours(0,0,0,0);
@@ -165,20 +165,20 @@ function toggleAdvancedAnalytics(id, subjectName, attended, held) {
             resultHTML = `<div style="color: #00b09b; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 8px; text-align: center; font-size: 12px;">
                   <i class="fa-solid fa-shield-halved" style="font-size: 16px; margin-bottom: 5px;"></i><br>
                   <b>100% Safe!</b><br>
-                  Apko is subject ki aage classes attend karne ki zaroorat nahi hai. Enjoy! 😎<br>
+                  You do not need to attend any more classes for this subject. Enjoy! 😎<br>
                   <span style="font-size: 10px; color: gray;">(Future classes scheduled: ${futureClasses})</span>
                 </div>`;
         } else if (moreClassesNeeded > futureClasses) {
             resultHTML = `<div style="color: #ff416c; padding: 10px; background: rgba(255,0,0,0.1); border-radius: 8px; text-align: center; font-size: 12px;">
                   <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; margin-bottom: 5px;"></i><br>
                   <b>Target Impossible ❌</b><br>
-                  Exam tak sirf ${futureClasses} class bachi hain, par apko 75% ke liye ${moreClassesNeeded} karni padengi.
+                  Only ${futureClasses} classes remain before the exam, but you need to attend ${moreClassesNeeded} to reach 75%.
                 </div>`;
         } else {
             resultHTML = `<div style="color: #f1c40f; padding: 10px; background: rgba(255,255,0,0.1); border-radius: 8px; text-align: center; font-size: 12px;">
                   <i class="fa-solid fa-person-running" style="font-size: 16px; margin-bottom: 5px;"></i><br>
                   <b>Focus Required ⚠️</b><br>
-                  Exam tak ${futureClasses} class hongi. Apko unme se <b>${moreClassesNeeded} classes</b> zaroor attend karni padengi!
+                  There are ${futureClasses} classes remaining before the exam. You must attend at least <b>${moreClassesNeeded} of them</b>!
                 </div>`;
         }
         box.innerHTML = resultHTML;
@@ -244,7 +244,7 @@ function calculatePrediction(isSilent = false) {
         });
 }
 
-// 🌟 NAYA: Jab tak server jaagta hai, tab tak "Loading" message dikhayega
+// 🌟 NEW: Displays a "Loading" message while the server wakes up
 function loadPersistentPredictor() {
     if(localStorage.getItem('examEndDate') && localStorage.getItem('examStartDate')) {
         let pCard = document.getElementById('persistent-predictor');
