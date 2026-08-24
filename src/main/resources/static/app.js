@@ -10,10 +10,10 @@ function getLocalDateString() {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-}
+}   
 
 function fetchStats() {
-    fetch('http://localhost:8080/api/stats')
+    fetch(' https://nfc-backend-samit.onrender.com/api/stats')
         .then(res => res.json())
         .then(data => {
             document.getElementById('current-percentage').textContent = data.percentage + '%';
@@ -25,7 +25,7 @@ function fetchStats() {
 
 function fetchSchedule() {
     const scheduleContainer = document.getElementById('schedule-container');
-    fetch('http://localhost:8080/api/today-schedule')
+    fetch(' https://nfc-backend-samit.onrender.com/api/today-schedule')
         .then(response => response.json())
         .then(data => {
             scheduleContainer.innerHTML = ''; 
@@ -145,7 +145,7 @@ function calculateCustomTarget(id, attended, held, targetPerc) {
 }
 
 function markAttendance(subjectId, status, buttonElement) {
-    fetch(`http://localhost:8080/api/mark-attendance?subjectId=${subjectId}&status=${status}`, { method: 'POST' })
+    fetch(`https://nfc-backend-samit.onrender.com/api/mark-attendance?subjectId=${subjectId}&status=${status}`, { method: 'POST' })
     .then(() => {
         fetchStats();
         fetchSchedule(); 
@@ -180,7 +180,7 @@ function calculatePrediction(isSilent = false) {
     }
     if(!start || !end) return;
 
-    fetch(`http://localhost:8080/api/predict?startDate=${start}&endDate=${end}`)
+    fetch(`https://nfc-backend-samit.onrender.com/api/predict?startDate=${start}&endDate=${end}`)
         .then(res => res.json())
         .then(data => {
             if(!isSilent) closeModal('predictor-modal');
@@ -217,7 +217,7 @@ function openTimetable() {
     document.getElementById('timetable-modal').classList.remove('hidden');
     const container = document.getElementById('full-timetable-container');
     container.innerHTML = '<div class="loading-text">Loading Timetable...</div>';
-    fetch('http://localhost:8080/api/all-schedule')
+    fetch('https://nfc-backend-samit.onrender.com/api/all-schedule')
         .then(res => res.json())
         .then(data => {
             container.innerHTML = '';
@@ -247,7 +247,7 @@ function openSubjectReport() {
     const container = document.getElementById('subject-report-container');
     container.innerHTML = '<div class="loading-text">Loading Subject Analytics...</div>';
 
-    fetch('http://localhost:8080/api/all-subjects-stats')
+    fetch('https://nfc-backend-samit.onrender.com/api/all-subjects-stats')
         .then(res => {
             if (!res.ok) throw new Error("API Not Found! Server properly restart nahi hua.");
             return res.json();
@@ -301,7 +301,7 @@ function openSubjectReport() {
 
 function resetSystem() {
     if(confirm("WARNING: Are you sure you want to delete ALL attendance data? This cannot be undone.")) {
-        fetch('http://localhost:8080/api/reset-attendance', { method: 'DELETE' })
+        fetch('https://nfc-backend-samit.onrender.com/api/reset-attendance', { method: 'DELETE' })
         .then(res => res.text())
         .then(msg => {
             alert(msg);
