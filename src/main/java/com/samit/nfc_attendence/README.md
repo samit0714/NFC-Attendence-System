@@ -14,4 +14,4 @@ A modern, Glassmorphism-themed Attendance Tracker built for B.Tech students. It 
 - **Deployment:** Vercel (Frontend) & Render (Backend)
 
 ## 👨‍💻 Developed By
-**Samit** | B.Tech CSE
+**Samit** | B.Tech CSE (Batch C1)

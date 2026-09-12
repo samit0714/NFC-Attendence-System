@@ -50,10 +50,12 @@ public class NfcController {
             double perc = held > 0 ? ((double) present / held) * 100 : 0.0;
             long needed = Math.max(0, (3 * held) - (4 * present));
             
+            
             map.put("attended", present);
             map.put("held", held);
             map.put("percentage", Math.round(perc * 10.0) / 10.0);
             map.put("needed", needed);
+            
             
             List<Attendance> todayAtt = attendanceRepository.findBySubjectIdAndAttendanceDate(t.getId(), LocalDate.now());
             map.put("todayStatus", todayAtt.isEmpty() ? null : todayAtt.get(0).getStatus());

@@ -1,4 +1,4 @@
-const API_BASE = 'https://nfc-backend-samit.onrender.com/api';
+const API_BASE = 'https://nfc-backend-saumya.onrender.com/api';
 let weeklyTimetableCache = []; // To cache the timetable
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -187,6 +187,7 @@ function toggleAdvancedAnalytics(id, subjectName, attended, held) {
         box.classList.add('hidden');
         icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
     }
+    
 }
 
 function markAttendance(subjectId, status, buttonElement) {
@@ -204,6 +205,7 @@ function markAttendance(subjectId, status, buttonElement) {
 
 function openPredictor() { 
     document.getElementById('predictor-modal').classList.remove('hidden'); 
+    
     let start = localStorage.getItem('examStartDate');
     let end = localStorage.getItem('examEndDate');
     document.getElementById('start-date').value = start ? start : getLocalDateString();
