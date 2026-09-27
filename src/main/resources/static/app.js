@@ -1,4 +1,4 @@
-const API_BASE = 'https://nfc-backend-new-hhxj.onrender.com';
+const API_BASE = 'https://nfc-backend-new-hhxj.onrender.com/api';
 let weeklyTimetableCache = []; // To cache the timetable
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,7 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetching the complete timetable in the background
     fetch(`${API_BASE}/all-schedule`)
         .then(res => res.json())
-        .then(data => { weeklyTimetableCache = data; });
+        .then(data => { 
+            if(Array.isArray(data)) {
+                weeklyTimetableCache = data; 
+            }
+        })
+        .catch(err => console.error("Failed to load background timetable:", err));
 });
 
 // --- Sound & Haptics Engine ---
@@ -40,31 +45,55 @@ function getLocalDateString() {
     return `${today.getFullYear()}-${month}-${day}`;
 }
 
+// --- Fetch API Functions ---
 function fetchStats() {
     fetch(`${API_BASE}/stats`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
         .then(data => {
-            document.getElementById('current-percentage').textContent = data.percentage + '%';
-            document.getElementById('current-percentage').style.color = data.percentage >= 75 ? '#00b09b' : '#ff416c';
-            document.getElementById('classes-needed').textContent = data.percentage >= 75 ? 'Safe! (0)' : data.classesNeededFor75;
-            document.getElementById('classes-needed').style.color = data.percentage >= 75 ? '#00b09b' : '#ff416c';
+            // Safety check in case API returns unexpected format
+            if (data && data.percentage !== undefined) {
+                document.getElementById('current-percentage').textContent = data.percentage + '%';
+                document.getElementById('current-percentage').style.color = data.percentage >= 75 ? '#00b09b' : '#ff416c';
+                document.getElementById('classes-needed').textContent = data.percentage >= 75 ? 'Safe! (0)' : data.classesNeededFor75;
+                document.getElementById('classes-needed').style.color = data.percentage >= 75 ? '#00b09b' : '#ff416c';
+            }
+        })
+        .catch(err => {
+            console.error("Stats Fetch Error:", err);
+            document.getElementById('current-percentage').textContent = 'Error';
+            document.getElementById('classes-needed').textContent = 'Backend Offline';
         });
 }
 
 function fetchSchedule() {
     const scheduleContainer = document.getElementById('schedule-container');
+    
     fetch(`${API_BASE}/today-schedule`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+        })
         .then(data => {
             scheduleContainer.innerHTML = ''; 
+            
+            // Crash-proof check: Ensures data is actually an array before running .forEach
+            if (!Array.isArray(data)) {
+                console.error("Expected array but got:", data);
+                scheduleContainer.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #ff416c;">Data format error. Check backend connection.</div>`;
+                return;
+            }
+
             if (data.length === 0) {
                 scheduleContainer.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #a0aec0;">No classes scheduled for today.</div>`;
                 return;
             }
 
             data.forEach((item, index) => {
-                const startTime = item.startTime.substring(0, 5);
-                const endTime = item.endTime.substring(0, 5);
+                const startTime = item.startTime ? item.startTime.substring(0, 5) : "--:--";
+                const endTime = item.endTime ? item.endTime.substring(0, 5) : "--:--";
                 const color = item.percentage >= 75 ? '#00b09b' : '#ff416c';
                 const needText = item.needed > 0 ? `Need ${item.needed} more` : 'Safe!';
 
@@ -117,6 +146,10 @@ function fetchSchedule() {
                 `;
                 scheduleContainer.appendChild(card);
             });
+        })
+        .catch(err => {
+            console.error("Schedule Fetch Error:", err);
+            scheduleContainer.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #ff416c;">Failed to load schedule. Is the server running?</div>`;
         });
 }
 
@@ -187,7 +220,6 @@ function toggleAdvancedAnalytics(id, subjectName, attended, held) {
         box.classList.add('hidden');
         icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
     }
-    
 }
 
 function markAttendance(subjectId, status, buttonElement) {
@@ -196,11 +228,13 @@ function markAttendance(subjectId, status, buttonElement) {
     else if (status === 'Holiday') { playBeep(700, 150); triggerVibration(40); }
 
     fetch(`${API_BASE}/mark-attendance?subjectId=${subjectId}&status=${status}`, { method: 'POST' })
-    .then(() => {
+    .then(res => {
+        if (!res.ok) throw new Error("Failed to mark attendance");
         fetchStats();
         fetchSchedule(); 
         if(localStorage.getItem('examEndDate')) calculatePrediction(true);
-    });
+    })
+    .catch(err => alert("Error marking attendance: " + err.message));
 }
 
 function openPredictor() { 
@@ -228,25 +262,31 @@ function calculatePrediction(isSilent = false) {
     if(!start || !end) return;
 
     fetch(`${API_BASE}/predict?startDate=${start}&endDate=${end}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to load prediction");
+            return res.json();
+        })
         .then(data => {
             if(!isSilent) closeModal('predictor-modal');
             let pCard = document.getElementById('persistent-predictor');
-            let color = data.is75Possible ? '#00b09b' : '#ff416c';
-            pCard.innerHTML = `
-                <i class="fa-solid fa-calendar-day" style="color: #8e2de2; font-size: 24px;"></i>
-                <div style="width: 100%;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="stat-value" style="color: ${color}">${data.predictedPercentage}% Expected</span>
-                        <span style="font-size: 11px; color: #a0aec0;">${data.futureClassesCount} Classes left</span>
+            if(pCard) {
+                let color = data.is75Possible ? '#00b09b' : '#ff416c';
+                pCard.innerHTML = `
+                    <i class="fa-solid fa-calendar-day" style="color: #8e2de2; font-size: 24px;"></i>
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="stat-value" style="color: ${color}">${data.predictedPercentage}% Expected</span>
+                            <span style="font-size: 11px; color: #a0aec0;">${data.futureClassesCount} Classes left</span>
+                        </div>
+                        <span class="stat-label">Target: ${new Date(end).toLocaleDateString('en-GB')}</span>
                     </div>
-                    <span class="stat-label">Target: ${new Date(end).toLocaleDateString('en-GB')}</span>
-                </div>
-            `;
-        });
+                `;
+            }
+        })
+        .catch(err => console.error("Predictor Error:", err));
 }
 
-// 🌟 NEW: Displays a "Loading" message while the server wakes up
+// 🌟 Displays a "Loading" message while the server wakes up
 function loadPersistentPredictor() {
     if(localStorage.getItem('examEndDate') && localStorage.getItem('examStartDate')) {
         let pCard = document.getElementById('persistent-predictor');
@@ -256,7 +296,9 @@ function loadPersistentPredictor() {
             pCard.className = 'glass-card stat-box';
             pCard.style.gridColumn = 'span 2';
             pCard.innerHTML = `<div style="text-align: center; width: 100%; color: #a0aec0; font-size: 11px;"><i class="fa-solid fa-spinner fa-spin"></i> Waking up Cloud Server...</div>`;
-            document.querySelector('.stats-container').appendChild(pCard);
+            
+            const statsContainer = document.querySelector('.stats-container');
+            if(statsContainer) statsContainer.appendChild(pCard);
         }
         calculatePrediction(true);
     }
@@ -266,10 +308,20 @@ function openTimetable() {
     document.getElementById('timetable-modal').classList.remove('hidden');
     const container = document.getElementById('full-timetable-container');
     container.innerHTML = '<div class="loading-text">Loading Timetable...</div>';
+    
     fetch(`${API_BASE}/all-schedule`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to load");
+            return res.json();
+        })
         .then(data => {
             container.innerHTML = '';
+            
+            if (!Array.isArray(data)) {
+                container.innerHTML = `<div style="color: #ff416c; text-align: center; padding: 20px;">Data Format Error!</div>`;
+                return;
+            }
+
             const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             const grouped = {};
             data.forEach(item => {
@@ -280,22 +332,34 @@ function openTimetable() {
                 if(grouped[day]) {
                     let dayHTML = `<h4 style="color: var(--primary); margin: 15px 0 5px; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px;">${day}</h4>`;
                     grouped[day].forEach(cls => {
-                        dayHTML += `<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px;"><strong style="color: white;">${cls.subjectName}</strong><br><span style="color: #a0aec0;">${cls.startTime.substring(0, 5)} - ${cls.endTime.substring(0, 5)} | ${cls.classType}</span></div>`;
+                        const startTime = cls.startTime ? cls.startTime.substring(0, 5) : "--:--";
+                        const endTime = cls.endTime ? cls.endTime.substring(0, 5) : "--:--";
+                        dayHTML += `<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px;"><strong style="color: white;">${cls.subjectName}</strong><br><span style="color: #a0aec0;">${startTime} - ${endTime} | ${cls.classType}</span></div>`;
                     });
                     container.innerHTML += dayHTML;
                 }
             });
-        });
+        }).catch(() => container.innerHTML = `<div style="color: #ff416c; text-align: center; padding: 20px;">Connection Error!</div>`);
 }
 
 function openSubjectReport() {
     document.getElementById('subject-report-modal').classList.remove('hidden');
     const container = document.getElementById('subject-report-container');
     container.innerHTML = '<div class="loading-text">Loading Subject Analytics...</div>';
+    
     fetch(`${API_BASE}/all-subjects-stats`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to load");
+            return res.json();
+        })
         .then(data => {
             container.innerHTML = '';
+            
+            if (!Array.isArray(data)) {
+                container.innerHTML = `<div style="color: #ff416c; text-align: center; padding: 20px;">Data Format Error!</div>`;
+                return;
+            }
+
             data.forEach(sub => {
                 const color = sub.percentage >= 75 ? '#00b09b' : '#ff416c';
                 let bunkText = sub.held > 0 ? (sub.percentage >= 75 ? `<span style="color: #00b09b; font-size: 11px;"><i class="fa-solid fa-couch"></i> Safe to bunk ${sub.safeBunks}</span>` : `<span style="color: #ff416c; font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> Need ${sub.needed} classes</span>`) : `<span style="color: gray; font-size: 11px;">No classes held</span>`;
@@ -314,10 +378,13 @@ function openSubjectReport() {
 
 function resetSystem() {
     if(confirm("WARNING: Delete ALL attendance data?")) {
-        fetch(`${API_BASE}/reset-attendance`, { method: 'DELETE' }).then(res => {
+        fetch(`${API_BASE}/reset-attendance`, { method: 'DELETE' })
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to reset");
             localStorage.removeItem('examStartDate');
             localStorage.removeItem('examEndDate');
             location.reload(); 
-        });
+        })
+        .catch(err => alert("Error resetting data: " + err.message));
     }
 }
