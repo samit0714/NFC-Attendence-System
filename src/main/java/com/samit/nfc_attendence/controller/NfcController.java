@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api")
@@ -89,6 +90,7 @@ public class NfcController {
         long totalPresent = attendanceRepository.countByStatus("Present");
         long totalAbsent = attendanceRepository.countByStatus("Absent");
         long totalHeld = totalPresent + totalAbsent; 
+        
         
         double percentage = 0.0;
         if (totalHeld > 0) {

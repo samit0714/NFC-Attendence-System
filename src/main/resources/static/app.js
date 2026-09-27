@@ -1,4 +1,4 @@
-const API_BASE = 'https://nfc-backend-saumya.onrender.com/api';
+const API_BASE = 'https://nfc-backend-new-hhxj.onrender.com';
 let weeklyTimetableCache = []; // To cache the timetable
 
 document.addEventListener('DOMContentLoaded', () => {
